@@ -7,10 +7,18 @@ use serde::Serialize;
 
 #[derive(Serialize)]
 struct Transaction {
-    transaction_id: String,
-    bank_id: u32,
-    customer_id: u32,
-    amount: f64,
+    #[serde(serialize_with = "uuid_to_string")]
+    transaction_id: Uuid,
+    bank_id: u8,
+    customer_id: u16,
+    amount: f32,
+}
+
+fn uuid_to_string<S>(uuid: &Uuid, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    serializer.serialize_str(&uuid.to_string())
 }
 
 fn main() -> io::Result<()> {
@@ -20,7 +28,6 @@ fn main() -> io::Result<()> {
     let csv_file = File::create("transactions.csv")?;
     let mut csv_writer = csv::Writer::from_writer(csv_file);
 
-    // Fichier binaire .bin
     let binary_file = File::create("transactions.bin")?;
     let mut binary_writer = BufWriter::new(binary_file);
 
@@ -29,15 +36,16 @@ fn main() -> io::Result<()> {
     // Vous devez appeler .unwrap() sur les Uniform dans rand 0.9.1
     let bank_id_range = Uniform::new_inclusive(1, 115).unwrap();
     let customer_id_range = Uniform::new_inclusive(1, 1366).unwrap();
-    let amount_range = Uniform::new_inclusive(-10_000.0_f64, 10_000.0_f64).unwrap();
+    let amount_range = Uniform::new_inclusive(-10_000.0_f32, 10_000.0_f32).unwrap();
 
     for _ in 0..num_transactions {
         let transaction = Transaction {
-            transaction_id: Uuid::new_v4().to_string(),
+            transaction_id: Uuid::new_v4(),
             bank_id: rng.sample(bank_id_range),
             customer_id: rng.sample(customer_id_range),
             amount: (rng.sample(amount_range) * 100.0).round() / 100.0,
         };
+
 
         // Écriture dans le fichier CSV
         csv_writer.serialize(&transaction)?;
@@ -45,9 +53,9 @@ fn main() -> io::Result<()> {
         // Écriture dans le fichier binaire (.bin)
         binary_writer.write_all(transaction.transaction_id.as_bytes())?;
         binary_writer.write_all(&[0u8])?; // Séparateur null entre UUID et autres champs
-        binary_writer.write_all(&transaction.bank_id.to_le_bytes())?;
-        binary_writer.write_all(&transaction.customer_id.to_le_bytes())?;
-        binary_writer.write_all(&transaction.amount.to_le_bytes())?;
+        binary_writer.write_all(&transaction.bank_id.to_ne_bytes())?;
+        binary_writer.write_all(&transaction.customer_id.to_ne_bytes())?;
+        binary_writer.write_all(&transaction.amount.to_ne_bytes())?;
     }
 
     // Finalisation des fichiers
