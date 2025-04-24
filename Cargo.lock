@@ -3,16 +3,6 @@
 version = 4
 
 [[package]]
-name = "Binary"
-version = "0.1.0"
-dependencies = [
- "csv",
- "rand",
- "serde",
- "uuid",
-]
-
-[[package]]
 name = "bitflags"
 version = "2.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -172,6 +162,16 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "transaction_processor"
+version = "0.1.0"
+dependencies = [
+ "csv",
+ "rand",
+ "serde",
+ "uuid",
 ]
 
 [[package]]

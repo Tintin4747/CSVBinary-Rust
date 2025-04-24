@@ -1,8 +1,5 @@
-mod models;
-mod utils;
-
+use transaction_processor::models::Transaction;
 use std::fs;
-use models::Transaction;
 use std::fs::File;
 use std::io::{self, Write, BufWriter};
 use rand::{Rng, rng};
@@ -12,13 +9,13 @@ use uuid::Uuid;
 fn main() -> io::Result<()> {
     let num_transactions = 10_000;
 
-    fs::create_dir_all("out")?;
+    fs::create_dir_all("../../out")?;
 
     // Fichier CSV
-    let csv_file = File::create("out/transactions.csv")?;
+    let csv_file = File::create("../../out/transactions.csv")?;
     let mut csv_writer = csv::Writer::from_writer(csv_file);
 
-    let binary_file = File::create("out/transactions.bin")?;
+    let binary_file = File::create("../../out/transactions.bin")?;
     let mut binary_writer = BufWriter::new(binary_file);
 
     let mut rng = rng();
@@ -42,7 +39,6 @@ fn main() -> io::Result<()> {
 
         // Écriture dans le fichier binaire (.bin)
         binary_writer.write_all(transaction.transaction_id.as_bytes())?;
-        binary_writer.write_all(&[0u8])?; // Séparateur null entre UUID et autres champs
         binary_writer.write_all(&transaction.bank_id.to_ne_bytes())?;
         binary_writer.write_all(&transaction.customer_id.to_ne_bytes())?;
         binary_writer.write_all(&transaction.amount.to_ne_bytes())?;
