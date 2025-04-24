@@ -1,37 +1,27 @@
+mod models;
+mod utils;
+
+use std::fs;
+use models::Transaction;
 use std::fs::File;
 use std::io::{self, Write, BufWriter};
 use rand::{Rng, rng};
 use rand::distr::Uniform;
 use uuid::Uuid;
-use serde::Serialize;
-
-#[derive(Serialize)]
-struct Transaction {
-    #[serde(serialize_with = "uuid_to_string")]
-    transaction_id: Uuid,
-    bank_id: u8,
-    customer_id: u16,
-    amount: f32,
-}
-
-fn uuid_to_string<S>(uuid: &Uuid, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-{
-    serializer.serialize_str(&uuid.to_string())
-}
 
 fn main() -> io::Result<()> {
     let num_transactions = 10_000;
 
+    fs::create_dir_all("out")?;
+
     // Fichier CSV
-    let csv_file = File::create("transactions.csv")?;
+    let csv_file = File::create("out/transactions.csv")?;
     let mut csv_writer = csv::Writer::from_writer(csv_file);
 
-    let binary_file = File::create("transactions.bin")?;
+    let binary_file = File::create("out/transactions.bin")?;
     let mut binary_writer = BufWriter::new(binary_file);
 
-    let mut rng = rng(); // Utilisez thread_rng() et non rng()
+    let mut rng = rng();
 
     // Vous devez appeler .unwrap() sur les Uniform dans rand 0.9.1
     let bank_id_range = Uniform::new_inclusive(1, 115).unwrap();
