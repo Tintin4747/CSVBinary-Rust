@@ -48,6 +48,7 @@ jobs:
             echo "should_release=true" >> $GITHUB_OUTPUT
           else
             echo "should_release=false" >> $GITHUB_OUTPUT
+          fi
 
   build-and-release:
     needs: check-version
