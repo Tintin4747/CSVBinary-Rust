@@ -38,7 +38,8 @@ jobs:
               core.setOutput("latest_version", latestRelease.data.tag_name);
             } catch (error) {
               if (error.status === 404) {
-                core.setOutput("latest_version", "0.0.0"); # Aucun release existant
+                // Aucun release existant
+                core.setOutput("latest_version", "0.0.0");
               } else {
                 throw error;
               }
@@ -48,8 +49,58 @@ jobs:
         id: check_version
         run: |
           if [ "${{ env.version }}" == "${{ steps.get_release.outputs.latest_version }}" ]; then
-            echo "
-"version_changed=false" >> $GITHUB_OUTPUT
+            echo "version_changed=false" >> $GITHUB_ENV
+            echo "version_changed=false" >> $GITHUB_OUTPUT
           else
+            echo "version_changed=true" >> $GITHUB_ENV
             echo "version_changed=true" >> $GITHUB_OUTPUT
           fi
+
+  build-and-release:
+    needs: check-version
+    if: ${{ needs.check-version.outputs.version_changed == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Build for Linux
+        run: cargo build --release
+
+      - name: Cross-compile for Windows
+        run: |
+          rustup target add x86_64-pc-windows-gnu
+          cargo build --release --target x86_64-pc-windows-gnu
+
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ env.version }}
+          release_name: ${{ env.version }}
+          body: |
+            Changelog:
+            ${{ steps.get_commits.outputs.changelog }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Linux binaries
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: target/release/balance_by_user
+          asset_name: balance_by_user-linux
+          asset_content_type: application/octet-stream
+
+      - name: Upload Windows binaries
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: target/x86_64-pc-windows-gnu/release/balance_by_user.exe
+          asset_name: balance_by_user-windows.exe
+          asset_content_type: application/octet-stream
