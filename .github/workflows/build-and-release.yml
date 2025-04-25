@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+  id-token: write
+
 jobs:
   check-version:
     runs-on: ubuntu-latest
@@ -85,29 +89,17 @@ jobs:
         with:
           result-encoding: string
           script: |
-            try {
-              const latest = await github.rest.repos.getLatestRelease({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-              });
-              const commits = await github.rest.repos.listCommits({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                sha: 'main',
-                since: latest.data.published_at,
-              });
-              return commits.data.map(commit => `- ${commit.commit.message}`).join('\n');
-            } catch (error) {
-              if (error.status === 404) {
-                const commits = await github.rest.repos.listCommits({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  sha: 'main',
-                });
-                return commits.data.map(commit => `- ${commit.commit.message}`).join('\n');
-              }
-              throw error;
-            }
+            const latest = await github.rest.repos.getLatestRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            const commits = await github.rest.repos.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: 'main',
+              since: latest.data.published_at,
+            });
+            return commits.data.map(commit => `- ${commit.commit.message}`).join('\n');
 
       - name: Create release
         id: create_release
