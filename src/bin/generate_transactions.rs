@@ -9,13 +9,13 @@ use uuid::Uuid;
 fn main() -> io::Result<()> {
     let num_transactions = 10_000;
 
-    fs::create_dir_all("../../out")?;
+    fs::create_dir_all("out")?;
 
     // Fichier CSV
-    let csv_file = File::create("../../out/transactions.csv")?;
+    let csv_file = File::create("out/transactions.csv")?;
     let mut csv_writer = csv::Writer::from_writer(csv_file);
 
-    let binary_file = File::create("../../out/transactions.bin")?;
+    let binary_file = File::create("out/transactions.bin")?;
     let mut binary_writer = BufWriter::new(binary_file);
 
     let mut rng = rng();
