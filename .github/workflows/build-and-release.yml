@@ -49,10 +49,10 @@ jobs:
         run: |
           if [ "${{ env.version }}" == "${{ steps.get_release.outputs.latest_version }}" ]; then
             echo "version_changed=false" >> $GITHUB_ENV
-            echo "::set-output name=version_changed::false"
+            echo "version_changed=false" >> $GITHUB_OUTPUT
           else
             echo "version_changed=true" >> $GITHUB_ENV
-            echo "::set-output name=version_changed::true"
+            echo "version_changed=true" >> $GITHUB_OUTPUT
           fi
 
   build-and-release:
