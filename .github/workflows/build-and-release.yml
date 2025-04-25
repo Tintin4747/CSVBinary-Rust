@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version_changed: ${{ steps.check_version.outputs.version_changed }}
+      version: ${{ steps.version.outputs.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -24,6 +25,7 @@ jobs:
         run: |
           version=$(grep '^version' Cargo.toml | sed 's/version = "\(.*\)"/\1/')
           echo "version=$version" >> $GITHUB_ENV
+          echo "version=$version" >> $GITHUB_OUTPUT
 
       - name: Get latest release (corrigé)
         id: get_release
@@ -77,17 +79,35 @@ jobs:
           rustup target add x86_64-pc-windows-gnu
           cargo build --release --target x86_64-pc-windows-gnu
 
+      - name: Get commits since last release
+        id: get_commits
+        uses: actions/github-script@v6
+        with:
+          result-encoding: string
+          script: |
+            const latest = await github.rest.repos.getLatestRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            const commits = await github.rest.repos.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: 'main',
+              since: latest.data.published_at,
+            });
+            return commits.data.map(commit => `- ${commit.commit.message}`).join('\n');
+
       - name: Create release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ env.version }}
-          release_name: ${{ env.version }}
+          tag_name: ${{ needs.check-version.outputs.version }}
+          release_name: ${{ needs.check-version.outputs.version }}
           body: |
             Changelog:
-            ${{ steps.get_commits.outputs.changelog }}
+            ${{ steps.get_commits.outputs.result }}
           draft: false
           prerelease: false
 
