@@ -108,7 +108,7 @@ jobs:
           cp target/x86_64-pc-windows-gnu/release/generate_transactions.exe release_artifacts/generate_transactions-windows.exe
           cp target/x86_64-pc-windows-gnu/release/read_transactions_from_binary.exe release_artifacts/read_transactions_from_binary-windows.exe
 
-      - name: Create GitHub Release
+      - name: Create GitHub Release and Upload Binaries
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ env.VERSION }}
@@ -116,13 +116,6 @@ jobs:
           body: |
             ## Changes since ${{ env.LAST_TAG || 'the beginning' }}
             ${{ steps.changelog.outputs.log }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload binaries (Linux & Windows)
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ env.VERSION }}
           files: |
             release_artifacts/balance_by_user-linux
             release_artifacts/generate_transactions-linux
