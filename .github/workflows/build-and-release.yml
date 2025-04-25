@@ -85,17 +85,29 @@ jobs:
         with:
           result-encoding: string
           script: |
-            const latest = await github.rest.repos.getLatestRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-            });
-            const commits = await github.rest.repos.listCommits({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: 'main',
-              since: latest.data.published_at,
-            });
-            return commits.data.map(commit => `- ${commit.commit.message}`).join('\n');
+            try {
+              const latest = await github.rest.repos.getLatestRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              });
+              const commits = await github.rest.repos.listCommits({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                sha: 'main',
+                since: latest.data.published_at,
+              });
+              return commits.data.map(commit => `- ${commit.commit.message}`).join('\n');
+            } catch (error) {
+              if (error.status === 404) {
+                const commits = await github.rest.repos.listCommits({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  sha: 'main',
+                });
+                return commits.data.map(commit => `- ${commit.commit.message}`).join('\n');
+              }
+              throw error;
+            }
 
       - name: Create release
         id: create_release
