@@ -1,0 +1,131 @@
+name: Rust Release on Version Change
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+      current_version: ${{ steps.get_version.outputs.version }}
+      last_tag: ${{ steps.get_tag.outputs.tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Fetch all tags
+        run: git fetch --tags
+
+      - name: Get latest tag
+        id: get_tag
+        run: |
+          tag=$(git tag --sort=-creatordate | head -n 1)
+          echo "tag=$tag" >> $GITHUB_OUTPUT
+
+      - name: Get current project version
+        id: get_version
+        run: |
+          version=$(grep '^version' Cargo.toml | head -1 | sed 's/version *= *"\(.*\)"/\1/')
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Compare versions
+        id: check
+        run: |
+          last_tag="${{ steps.get_tag.outputs.tag }}"
+          current_version="${{ steps.get_version.outputs.version }}"
+          if [ -z "$last_tag" ]; then
+            echo "should_release=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          tag_version="${last_tag#v}"
+          if [ "$tag_version" != "$current_version" ]; then
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_release=false" >> $GITHUB_OUTPUT
+
+  build-and-release:
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      VERSION: ${{ needs.check-version.outputs.current_version }}
+      LAST_TAG: ${{ needs.check-version.outputs.last_tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu,x86_64-pc-windows-gnu
+
+      - name: Install MinGW for cross-compilation
+        run: sudo apt-get update && sudo apt-get install -y mingw-w64
+
+      - name: Build release for Linux
+        run: |
+          cargo build --release --bin balance_by_user --target x86_64-unknown-linux-gnu
+          cargo build --release --bin generate_transactions --target x86_64-unknown-linux-gnu
+          cargo build --release --bin read_transactions_from_binary --target x86_64-unknown-linux-gnu
+
+      - name: Build release for Windows
+        run: |
+          cargo build --release --bin balance_by_user --target x86_64-pc-windows-gnu
+          cargo build --release --bin generate_transactions --target x86_64-pc-windows-gnu
+          cargo build --release --bin read_transactions_from_binary --target x86_64-pc-windows-gnu
+
+      - name: Get Changelog (commits since last tag)
+        id: changelog
+        run: |
+          if [ -z "${LAST_TAG}" ]; then
+            log=$(git log --pretty=format:"- %s (%h)" )
+          else
+            log=$(git log "${LAST_TAG}"..HEAD --pretty=format:"- %s (%h)")
+          fi
+          if [ -z "$log" ]; then
+            log="No changes since last release."
+          fi
+          echo "log<<EOF" >> $GITHUB_OUTPUT
+          echo "$log" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Prepare binaries for release
+        run: |
+          mkdir -p release_artifacts
+          cp target/x86_64-unknown-linux-gnu/release/balance_by_user release_artifacts/balance_by_user-linux
+          cp target/x86_64-unknown-linux-gnu/release/generate_transactions release_artifacts/generate_transactions-linux
+          cp target/x86_64-unknown-linux-gnu/release/read_transactions_from_binary release_artifacts/read_transactions_from_binary-linux
+          cp target/x86_64-pc-windows-gnu/release/balance_by_user.exe release_artifacts/balance_by_user-windows.exe
+          cp target/x86_64-pc-windows-gnu/release/generate_transactions.exe release_artifacts/generate_transactions-windows.exe
+          cp target/x86_64-pc-windows-gnu/release/read_transactions_from_binary.exe release_artifacts/read_transactions_from_binary-windows.exe
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: v${{ env.VERSION }}
+          body: |
+            ## Changes since ${{ env.LAST_TAG || 'the beginning' }}
+            ${{ steps.changelog.outputs.log }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload binaries (Linux & Windows)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          files: |
+            release_artifacts/balance_by_user-linux
+            release_artifacts/generate_transactions-linux
+            release_artifacts/read_transactions_from_binary-linux
+            release_artifacts/balance_by_user-windows.exe
+            release_artifacts/generate_transactions-windows.exe
+            release_artifacts/read_transactions_from_binary-windows.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
