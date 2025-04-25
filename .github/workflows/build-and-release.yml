@@ -38,7 +38,8 @@ jobs:
               core.setOutput("latest_version", latestRelease.data.tag_name);
             } catch (error) {
               if (error.status === 404) {
-                core.setOutput("latest_version", "0.0.0"); // Default if no release exists
+                // Aucun release existant
+                core.setOutput("latest_version", "0.0.0");
               } else {
                 throw error;
               }
