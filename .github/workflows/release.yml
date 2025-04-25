@@ -48,7 +48,6 @@ jobs:
             echo "should_release=true" >> $GITHUB_OUTPUT
           else
             echo "should_release=false" >> $GITHUB_OUTPUT
-          fi
 
   build-and-release:
     needs: check-version
@@ -96,6 +95,9 @@ jobs:
       - name: Install MinGW for cross-compilation
         run: sudo apt-get update && sudo apt-get install -y mingw-w64
 
+      - name: Ensure zip is installed
+        run: sudo apt-get update && sudo apt-get install -y zip
+
       - name: Build release for Linux
         run: |
           cargo build --release --bin balance_by_user --target x86_64-unknown-linux-gnu
@@ -126,12 +128,21 @@ jobs:
       - name: Prepare binaries for release
         run: |
           mkdir -p release_artifacts
+          # Linux binaries
           cp target/x86_64-unknown-linux-gnu/release/balance_by_user release_artifacts/balance_by_user-linux
           cp target/x86_64-unknown-linux-gnu/release/generate_transactions release_artifacts/generate_transactions-linux
           cp target/x86_64-unknown-linux-gnu/release/read_transactions_from_binary release_artifacts/read_transactions_from_binary-linux
+          # Windows binaries
           cp target/x86_64-pc-windows-gnu/release/balance_by_user.exe release_artifacts/balance_by_user-windows.exe
           cp target/x86_64-pc-windows-gnu/release/generate_transactions.exe release_artifacts/generate_transactions-windows.exe
           cp target/x86_64-pc-windows-gnu/release/read_transactions_from_binary.exe release_artifacts/read_transactions_from_binary-windows.exe
+
+      - name: Create ZIP archives
+        run: |
+          cd release_artifacts
+          zip CSVBinary-linux.zip balance_by_user-linux generate_transactions-linux read_transactions_from_binary-linux
+          zip CSVBinary-windows.zip balance_by_user-windows.exe generate_transactions-windows.exe read_transactions_from_binary-windows.exe
+          cd ..
 
       - name: Create GitHub Release and Upload Binaries
         uses: softprops/action-gh-release@v2
@@ -142,11 +153,7 @@ jobs:
             ## Changes since ${{ env.LAST_TAG || 'the beginning' }}
             ${{ steps.changelog.outputs.log }}
           files: |
-            release_artifacts/balance_by_user-linux
-            release_artifacts/generate_transactions-linux
-            release_artifacts/read_transactions_from_binary-linux
-            release_artifacts/balance_by_user-windows.exe
-            release_artifacts/generate_transactions-windows.exe
-            release_artifacts/read_transactions_from_binary-windows.exe
+            release_artifacts/balance_by_user-linux.zip
+            release_artifacts/balance_by_user-windows.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
