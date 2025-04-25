@@ -25,34 +25,31 @@ jobs:
           version=$(grep '^version' Cargo.toml | sed 's/version = "\(.*\)"/\1/')
           echo "version=$version" >> $GITHUB_ENV
 
-      - name: Get latest release
+      - name: Get latest release (corrigé)
         id: get_release
         uses: actions/github-script@v6
         with:
+          result-encoding: string
           script: |
             try {
-              const latestRelease = await github.repos.getLatestRelease({
+              const { data } = await github.rest.repos.getLatestRelease({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
               });
-              core.setOutput("latest_version", latestRelease.data.tag_name);
+              return data.tag_name;
             } catch (error) {
               if (error.status === 404) {
-                // Aucun release existant
-                core.setOutput("latest_version", "0.0.0");
-              } else {
-                throw error;
+                return "0.0.0";
               }
+              throw error;
             }
 
       - name: Check if version changed
         id: check_version
         run: |
-          if [ "${{ env.version }}" == "${{ steps.get_release.outputs.latest_version }}" ]; then
-            echo "version_changed=false" >> $GITHUB_ENV
+          if [ "${{ env.version }}" == "${{ steps.get_release.outputs.result }}" ]; then
             echo "version_changed=false" >> $GITHUB_OUTPUT
           else
-            echo "version_changed=true" >> $GITHUB_ENV
             echo "version_changed=true" >> $GITHUB_OUTPUT
           fi
 
