@@ -28,24 +28,32 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            const latestRelease = await github.repos.getLatestRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-            });
-            core.setOutput("latest_version", latestRelease.data.tag_name);
+            try {
+              const latestRelease = await github.repos.getLatestRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              });
+              core.setOutput("latest_version", latestRelease.data.tag_name);
+            } catch (error) {
+              if (error.status === 404) {
+                core.setOutput("latest_version", "0.0.0"); // Défaut si aucune release
+              } else {
+                throw error;
+              }
+            }
 
       - name: Check if version changed
         id: check_version
         run: |
           if [ "${{ env.version }}" == "${{ steps.get_release.outputs.latest_version }}" ]; then
-            echo "::set-output name=version_changed::false"
+            echo "version_changed=false" >> $GITHUB_ENV
           else
-            echo "::set-output name=version_changed::true"
+            echo "version_changed=true" >> $GITHUB_ENV
           fi
 
   build-and-release:
     needs: check-version
-    if: ${{ needs.check-version.outputs.version_changed == 'true' }}
+    if: ${{ env.version_changed == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
