@@ -82,17 +82,8 @@ jobs:
           path: target
           key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: x86_64-unknown-linux-gnu,x86_64-pc-windows-gnu
-
-      - name: Set up MSYS2 and MinGW-w64
-        uses: msys2/setup-msys2@v2
-        with:
-          install: >-
-            mingw-w64
-            mingw-w64-x86_64-gcc
+      - name: Install cross
+        run: cargo install cross --locked
 
       - name: Ensure zip is installed
         run: sudo apt-get update && sudo apt-get install -y zip
@@ -103,11 +94,11 @@ jobs:
           cargo build --release --bin generate_transactions --target x86_64-unknown-linux-gnu
           cargo build --release --bin read_transactions_from_binary --target x86_64-unknown-linux-gnu
 
-      - name: Build release for Windows
+      - name: Build release for Windows (with cross)
         run: |
-          cargo build --release --bin balance_by_user --target x86_64-pc-windows-gnu
-          cargo build --release --bin generate_transactions --target x86_64-pc-windows-gnu
-          cargo build --release --bin read_transactions_from_binary --target x86_64-pc-windows-gnu
+          cross build --release --bin balance_by_user --target x86_64-pc-windows-gnu
+          cross build --release --bin generate_transactions --target x86_64-pc-windows-gnu
+          cross build --release --bin read_transactions_from_binary --target x86_64-pc-windows-gnu
 
       - name: Get Changelog (commits since last tag)
         id: changelog
