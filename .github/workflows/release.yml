@@ -82,23 +82,22 @@ jobs:
           path: target
           key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Install cross
-        run: cargo install cross --locked
-
       - name: Ensure zip is installed
         run: sudo apt-get update && sudo apt-get install -y zip
 
-      - name: Build release for Linux
-        run: |
-          cargo build --release --bin balance_by_user --target x86_64-unknown-linux-gnu
-          cargo build --release --bin generate_transactions --target x86_64-unknown-linux-gnu
-          cargo build --release --bin read_transactions_from_binary --target x86_64-unknown-linux-gnu
+      # Build all Linux binaries (using cross)
+      - name: Build all Linux binaries
+        uses: houseabsolute/actions-rust-cross@v1.0.4
+        with:
+          target: x86_64-unknown-linux-gnu
+          args: --release
 
-      - name: Build release for Windows (with cross)
-        run: |
-          cross build --release --bin balance_by_user --target x86_64-pc-windows-gnu
-          cross build --release --bin generate_transactions --target x86_64-pc-windows-gnu
-          cross build --release --bin read_transactions_from_binary --target x86_64-pc-windows-gnu
+      # Build all Windows binaries (using cross)
+      - name: Build all Windows binaries
+        uses: houseabsolute/actions-rust-cross@v1.0.4
+        with:
+          target: x86_64-pc-windows-gnu
+          args: --release
 
       - name: Get Changelog (commits since last tag)
         id: changelog
