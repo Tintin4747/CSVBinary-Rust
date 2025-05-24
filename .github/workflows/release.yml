@@ -64,12 +64,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Cache APT packages
-        uses: actions/cache@v4
-        with:
-          path: /var/cache/apt/archives
-          key: ${{ runner.os }}-apt-mingw
-
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
@@ -93,8 +87,12 @@ jobs:
         with:
           targets: x86_64-unknown-linux-gnu,x86_64-pc-windows-gnu
 
-      - name: Install MinGW for cross-compilation
-        run: sudo apt-get update && sudo apt-get install -y mingw-w64
+      - name: Set up MSYS2 and MinGW-w64
+        uses: msys2/setup-msys2@v2
+        with:
+          install: >-
+            mingw-w64
+            mingw-w64-x86_64-gcc
 
       - name: Ensure zip is installed
         run: sudo apt-get update && sudo apt-get install -y zip
@@ -154,7 +152,7 @@ jobs:
             ## Changes since ${{ env.LAST_TAG || 'the beginning' }}
             ${{ steps.changelog.outputs.log }}
           files: |
-            release_artifacts/balance_by_user-linux.zip
-            release_artifacts/balance_by_user-windows.zip
+            release_artifacts/CSVBinary-linux.zip
+            release_artifacts/CSVBinary-windows.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
