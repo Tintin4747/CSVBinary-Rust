@@ -13,7 +13,7 @@ fi
 binsort -s 23 -o 17 -l 2 out/transactions.bin out/transactions-filtered.bin
 
 # Générer les soldes des utilisateur
-./balances_by_user-linux
+./balance_by_user-linux
 
 # Afficher les résultats
 ./read_balances_from_binary-linux
