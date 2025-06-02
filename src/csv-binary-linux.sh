@@ -4,12 +4,10 @@
 time_step() {
     local label="$1"
     shift
-    start=$(date +%s)
-    local start
+    local start=$(date +%s%3N)
     "$@"
     local status=$?
-    end=$(date +%s)
-    local end
+    local end=$(date +%s%3N)
     local duration=$((end - start))
     echo "Durée pour $label : ${duration}s"
     return $status
