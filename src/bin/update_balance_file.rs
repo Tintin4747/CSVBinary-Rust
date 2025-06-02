@@ -1,4 +1,3 @@
-use std::collections::{HashMap, BTreeMap};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read, Write};
 use std::path::Path;
@@ -24,46 +23,41 @@ fn main() {
     let mut bank_id_buffer = [0; 1]; // 1 byte for bank_id
     let mut amount_buffer = [0; 4]; // 4 bytes for amount
     
-    let mut balances: HashMap<u16, f32> = HashMap::new();
+    let balance_out_file = File::create("out/balances_updated.bin")
+        .expect("Erreur lors de la création du fichier 'balances_updated.bin'");
+    let mut balance_writer = BufWriter::new(balance_out_file);
     
-    // 1. Charger balances_by_user.bin dans balances
+    let mut current_customer_id: u16;
+    let mut current_balance: f32;
+    
     while balance_reader.read_exact(&mut customer_id_buffer).is_ok() {
-        balance_reader.read_exact(&mut balance_buffer).expect("Erreur lecture balance");
-        let customer_id = u16::from_ne_bytes(customer_id_buffer);
-        let balance = f32::from_ne_bytes(balance_buffer);
-        balances.insert(customer_id, balance);
-    }
-
-    // 2. Parcourir transactions et mettre à jour balances
-    loop {
-        // Lire UUID
-        if transactions_reader.read_exact(&mut uuid_buffer).is_err() {
-            break;
+        balance_reader.read_exact(&mut balance_buffer).expect("Erreur lors de la lecture du solde");
+        current_customer_id = u16::from_ne_bytes(customer_id_buffer);
+        current_balance = f32::from_ne_bytes(balance_buffer);
+        
+        // Tant que le prochaine transaction a le même customer_id, on met à jour le solde
+        while transactions_reader.read_exact(&mut uuid_buffer).is_ok() {
+            transactions_reader.read_exact(&mut bank_id_buffer).expect("Erreur lors de la lecture du bank_id");
+            transactions_reader.read_exact(&mut customer_id_buffer).expect("Erreur lors de la lecture du customer_id");
+            let transaction_customer_id = u16::from_ne_bytes(customer_id_buffer);
+            transactions_reader.read_exact(&mut amount_buffer).expect("Erreur lors de la lecture du montant");
+            let amount = f32::from_ne_bytes(amount_buffer);
+            
+            if transaction_customer_id == current_customer_id {
+                // Mettre à jour le solde
+                current_balance += amount;
+            } else {
+                break;
+            }
         }
-        // Lire bank_id
-        transactions_reader.read_exact(&mut bank_id_buffer).expect("Erreur lecture bank_id");
-        // Lire customer_id
-        transactions_reader.read_exact(&mut customer_id_buffer).expect("Erreur lecture customer_id");
-        let customer_id = u16::from_ne_bytes(customer_id_buffer);
-        // Lire amount
-        transactions_reader.read_exact(&mut amount_buffer).expect("Erreur lecture amount");
-        let amount = f32::from_ne_bytes(amount_buffer);
-        // Mettre à jour balances
-        let entry = balances.entry(customer_id).or_insert(0.0);
-        *entry += amount;
+        
+        // Écriture du solde initial dans le fichier de sortie
+        balance_writer.write_all(&current_customer_id.to_ne_bytes()).expect("Erreur lors de l'écriture du customer_id");
+        balance_writer.write_all(&current_balance.to_ne_bytes()).expect("Erreur lors de l'écriture du solde");
     }
-
-    // 3. Trier balances par customer_id
-    let sorted_balances: BTreeMap<_, _> = balances.into_iter().collect();
-
-    // 4. Écraser balances_by_user.bin avec les nouvelles données
-    let bin_file = File::create("out/balances_by_user.bin").expect("Erreur création fichier balances_by_user.bin");
-    let mut bin_writer = BufWriter::new(bin_file);
-    for (customer_id, balance) in &sorted_balances {
-        bin_writer.write_all(&customer_id.to_ne_bytes()).expect("Erreur écriture customer_id");
-        bin_writer.write_all(&balance.to_ne_bytes()).expect("Erreur écriture balance");
-    }
-    bin_writer.flush().expect("Erreur flush fichier balances_by_user.bin");
-    println!("Fichier balances_by_user.bin mis à jour avec succès !");
+    
+    // Fermeture des fichiers
+    balance_writer.flush().expect("Erreur lors de la finalisation du fichier 'balances_updated.bin'");
+    println!("Le fichier 'balances_updated.bin' a été mis à jour avec succès !");
 }
 
