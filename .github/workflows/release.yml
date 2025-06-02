@@ -112,6 +112,7 @@ jobs:
         run: |
           mkdir -p release_artifacts
           # Linux binaries
+          cp src/csv-binary-linux.sh release_artifacts/csv-binary-linux.sh
           cp target/x86_64-unknown-linux-gnu/release/balance_by_user release_artifacts/balance_by_user-linux
           cp target/x86_64-unknown-linux-gnu/release/generate_transactions release_artifacts/generate_transactions-linux
           cp target/x86_64-unknown-linux-gnu/release/read_transactions_from_binary release_artifacts/read_transactions_from_binary-linux
@@ -127,7 +128,7 @@ jobs:
       - name: Create ZIP archives
         run: |
           cd release_artifacts
-          tar -czvf CSVBinary-linux.tar.gz balance_by_user-linux generate_transactions-linux read_transactions_from_binary-linux update_balance_file-linux read_balances_from_binary-linux
+          tar -czvf CSVBinary-linux.tar.gz balance_by_user-linux generate_transactions-linux read_transactions_from_binary-linux update_balance_file-linux read_balances_from_binary-linux csv-binary-linux.sh
           zip CSVBinary-windows.zip balance_by_user-windows.exe generate_transactions-windows.exe read_transactions_from_binary-windows.exe update_balance_file-windows.exe read_balances_from_binary-windows.exe
           cd ..
 

@@ -1,8 +1,16 @@
 use std::fs::File;
 use std::io::{self, BufReader, Read};
+use std::env;
 
 fn main() -> io::Result<()> {
-    let file = File::open("out/balances_by_user.bin")?;
+    let args: Vec<String> = env::args().collect();
+    let file_path = if args.len() > 1 {
+        &args[1]
+    } else {
+        "out/balances_by_user.bin"
+    };
+
+    let file = File::open(file_path)?;
     let mut reader = BufReader::new(file);
     let mut customer_id_buffer = [0; 2];
     let mut balance_buffer = [0; 4];
@@ -15,4 +23,3 @@ fn main() -> io::Result<()> {
     }
     Ok(())
 }
-
