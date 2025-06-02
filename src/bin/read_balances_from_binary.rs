@@ -20,5 +20,6 @@ fn main() -> io::Result<()> {
         let balance = f32::from_ne_bytes(balance_buffer);
         println!("Customer ID: {}, Balance: {}", customer_id, balance);
     }
+    println!();
     Ok(())
 }

@@ -44,5 +44,6 @@ fn main() -> io::Result<()>{
             transaction.customer_id, 
             transaction.amount);
     }
+    println!();
     Ok(())
 }
