@@ -86,6 +86,10 @@ jobs:
           target: x86_64-unknown-linux-gnu
           args: --release
 
+      - name: Debug Linux Build Output
+        run: |
+          ls -al target/x86_64-unknown-linux-gnu/release
+
       # Build all Windows binaries (using cross)
       - name: Build all Windows binaries
         uses: houseabsolute/actions-rust-cross@v1.0.4
