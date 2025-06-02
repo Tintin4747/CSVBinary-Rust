@@ -1,15 +1,14 @@
 use std::fs::File;
 use std::io::{self, BufReader, Read};
-use std::env;
+use clap::Parser;
+use transaction_processor::models::FileArgs;
 
 fn main() -> io::Result<()> {
-    let args: Vec<String> = env::args().collect();
-    let file_path = if args.len() > 1 {
-        &args[1]
-    } else {
-        "out/balances_by_user.bin"
-    };
-
+    let args = FileArgs::parse();
+    
+    let file_path_arg = args.file_path;
+    let file_path: String = file_path_arg.unwrap_or("out/balances_by_user.bin".to_string());
+    
     let file = File::open(file_path)?;
     let mut reader = BufReader::new(file);
     let mut customer_id_buffer = [0; 2];
