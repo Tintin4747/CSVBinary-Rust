@@ -111,6 +111,8 @@ jobs:
       - name: Prepare binaries for release
         run: |
           mkdir -p release_artifacts
+          pwd
+          ls -la target/x86_64-unknown-linux-gnu/release
           # Linux binaries
           cp src/csv-binary-linux.sh release_artifacts/csv-binary-linux.sh
           cp target/x86_64-unknown-linux-gnu/release/balance_by_user release_artifacts/balance_by_user-linux
