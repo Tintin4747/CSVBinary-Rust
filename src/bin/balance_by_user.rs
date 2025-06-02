@@ -10,11 +10,14 @@ fn main() -> io::Result<()>{
 
     let mut balances: HashMap<u16, f32> = HashMap::new();
 
+    // Initialisation du lecteur binaire
     let mut reader = io::BufReader::new(binary_file);
     let mut buffer = [0; 16]; // 16 bytes for UUID
     let mut bank_id_buffer = [0; 1]; // 1 byte for bank_id
     let mut customer_id_buffer = [0; 2]; // 2 bytes for customer_id
     let mut amount_buffer = [0; 4]; // 4 bytes for amount
+    
+    // Lecture du fichier des transactions
     while reader.read_exact(&mut buffer).is_ok() {
         reader.read_exact(&mut bank_id_buffer)?;
         reader.read_exact(&mut customer_id_buffer)?;
