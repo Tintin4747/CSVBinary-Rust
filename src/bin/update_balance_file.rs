@@ -10,9 +10,9 @@ fn main() {
     let balance_file = File::open("out/balances_by_user.bin")
         .expect("Erreur lors de l'ouverture du fichier 'balances_by_user.bin'");
     
-    let transactions_file = File::open("out/transactions-filtered.bin")
+    let transactions_file = File::open("out/transactions-sorted.bin")
         .or_else(|_| File::open("out/transactions.bin"))
-        .expect("Erreur lors de l'ouverture du fichier 'transactions.bin' ou 'transactions-filtered.bin'");
+        .expect("Erreur lors de l'ouverture du fichier 'transactions.bin' ou 'transactions-sorted.bin'");
     
     let mut balance_reader = BufReader::new(balance_file);
     let mut customer_id_buffer = [0; 2]; // 2 bytes for customer_id

@@ -23,7 +23,7 @@ if ! command -v binsort &> /dev/null; then
 fi
 
 # Effectuer un binsort sur les transactions
-binsort -s 23 -o 17 -l 2 out/transactions.bin out/transactions-filtered.bin
+binsort -s 23 -o 17 -l 2 out/transactions.bin out/transactions-sorted.bin
 
 # Générer les soldes des utilisateur
 time_step "Génération des soldes utilisateurs" ./balance_by_user-linux
@@ -33,7 +33,7 @@ time_step "Génération des soldes utilisateurs" ./balance_by_user-linux
 
 # Générer de nouvelles transactions
 time_step "Génération des transactions (2)" ./generate_transactions-linux
-binsort -s 23 -o 17 -l 2 out/transactions.bin out/transactions-filtered.bin
+binsort -s 23 -o 17 -l 2 out/transactions.bin out/transactions-sorted.bin
 
 time_step "Mise à jour des soldes utilisateurs" ./update_balance_file-linux
 ./read_balances_from_binary-linux out/balances_updated.bin

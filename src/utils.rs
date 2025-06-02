@@ -9,8 +9,8 @@ where
 }
 
 pub fn open_transaction_file() -> File {
-    if std::path::Path::new("out/transactions-filtered.bin").exists() {
-        File::open("out/transactions-filtered.bin").unwrap()
+    if std::path::Path::new("out/transactions-sorted.bin").exists() {
+        File::open("out/transactions-sorted.bin").unwrap()
     } else {
         File::open("out/transactions.bin").unwrap()
     }
