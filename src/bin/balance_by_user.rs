@@ -1,6 +1,7 @@
 use std::collections::{BTreeMap, HashMap};
+use std::fs::File;
 use std::io;
-use std::io::Read;
+use std::io::{BufWriter, Read, Write};
 use transaction_processor::utils::open_transaction_file;
 
 fn main() -> io::Result<()>{
@@ -28,16 +29,15 @@ fn main() -> io::Result<()>{
 
     // Trier les soldes par ID client
     let sorted_balances: BTreeMap<_, _> = balances.into_iter().collect();
-    
-    // Création d'un fichier CSV pour stocker les soldes
-    let csv_file = std::fs::File::create("out/balances_by_user_bin.csv")?;
-    let mut csv_writer = csv::Writer::from_writer(csv_file);
-    // Écriture des soldes dans le fichier CSV
+
+    // Création d'un fichier binaire pour stocker les soldes
+    let bin_file = File::create("out/balances_by_user.bin")?;
+    let mut bin_writer = BufWriter::new(bin_file);
     for (customer_id, balance) in &sorted_balances {
-        csv_writer.write_record(&[customer_id.to_string(), balance.to_string()])?;
+        bin_writer.write_all(&customer_id.to_ne_bytes())?;
+        bin_writer.write_all(&balance.to_ne_bytes())?;
     }
-    // Finalisation du fichier CSV
-    csv_writer.flush()?;
-    println!("Fichier balances_by_user.csv généré avec succès !");
+    bin_writer.flush()?;
+    println!("Fichier balances_by_user.bin généré avec succès !");
     Ok(())
 }
